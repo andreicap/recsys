@@ -68,14 +68,11 @@ def load_sparse_csr(filename):
                          shape = loader['shape'])
 
 
- combined = train_final.merge(tracks_final, left_on = 'track_id', right_on = 'track_id', how 
-     ...: = 'left')
-
-
+combined = train_final.merge(tracks_final, left_on = 'track_id', right_on = 'track_id', how = 'left')
 # wide_artist_data = usa_data.pivot(index = 'artist-name', columns = 'users', values = 'plays').fillna(0)
 # wide_artist_data_sparse = csr_matrix(wide_artist_data.values)
 
-
+#had to use only top 10% :(
 #combined cleaning, only popular songs
 unpopular_tracks =  combined.query('playcount < 1584')
 combined = combined[~combined.track_id.isin(unpopular_tracks.track_id)]
@@ -83,12 +80,29 @@ combined = combined[~combined.track_id.isin(unpopular_tracks.track_id)]
 # combined.shape - Out[135]: (294900, 7)
 
 
-#wide_data = combined.pivot(index = 'track_id', columns = 'playlist_id', values = 'playcount').fillna(0)
+wide_data = combined.pivot(index = 'track_id', columns = 'playlist_id', values = 'playcount').fillna(0)
+
+wide_data_sparse = csr_matrix(wide_data.values)
+
+save_sparse_csr('~/comp/wide_data_sparse.npz', wide_data_sparse)
+
+from sklearn.neighbors import NearestNeighbors
 
 
+model_knn = NearestNeighbors(metric = 'cosine', algorithm = 'brute')
+model_knn.fit(wide_data_sparse)
+
+query_index = np.random.choice(wide_data.shape[0])
+print(query_index)
 
 
+distances, indices = model_knn.kneighbors(wide_data.iloc[query_index, :].values.reshape(1, -1), n_neighbors = 6)
 
+for i in range(0, len(distances.flatten())):
+    if i == 0:
+        print('Recommendations for {0}:\n'.format(wide_data.index[query_index]))
+    else:
+        print('{0}: {1}, with distance of {2}:'.format(i, wide_data.index[indices.flatten()[i]], distances.flatten()[i]))
 
 
 
