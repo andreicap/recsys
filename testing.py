@@ -17,9 +17,6 @@ for p in playlists:
    recommend_final.append(str(p)+","+" ".join(str(v) for v in recs['song'][0:5].values))
 
 
-
-
-
 class item_similarity_recommender_py():
     def __init__(self):
         self.train_data = None

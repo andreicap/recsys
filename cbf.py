@@ -80,9 +80,11 @@ combined = combined[combined.track_id.isin(target_tracks.track_id)]
 
 #had to use only top 10% :(
 #combined cleaning, only popular songs
-unpopular_tracks =  combined.query('playcount < 1584')
+unpopular_tracks =  combined.query('playcount < 20000')
 combined = combined[~combined.track_id.isin(unpopular_tracks.track_id)]
+combined['tags'] = [v[1:-1].split() for v in combined['tags'].values]
 # combined.shape - Out[135]: (294900, 7)
+print(combined.shape)
 
 
 # wide_data = combined.pivot(index = 'playlist_id', columns = 'track_id', values = 'playcount').fillna(0)
@@ -111,6 +113,7 @@ import scipy.sparse as sps
 
 URM_all = sps.coo_matrix((combined['playcount'], (combined['playlist_id'], combined['track_id'])))
 
+
 userList = combined['playlist_id']
 itemList = combined['track_id']
 ratingList = combined['playcount']
@@ -122,13 +125,20 @@ tagList_icm = list(tagList)
 
 userList_unique = list(set(userList_icm))
 itemList_unique = list(set(itemList_icm))
-tagList_unique = list(set(tagList_icm))
+
+flattened_list = []
+
+#flatten the lis
+for x in tagList_icm:
+    for y in x:
+        flattened_list.append(y)
+
+tagList_unique = list(set(flattened_list))
+# tagList_unique = [ for v in combined['tags'].values]
 
 numUsers = len(userList_unique)
 numItems = len(itemList_unique)
 numTags = len(tagList_unique)
-
-wide_data = URM_all
 
 from sklearn import preprocessing
 le = preprocessing.LabelEncoder()
@@ -275,7 +285,7 @@ class BasicItemKNNRecommender(object):
                 
             this_item_weights = item_weights[i,:].toarray()[0]
             top_k_idx = np.argsort(this_item_weights) [-self.k:]-5
-                        
+            
             values.extend(this_item_weights[top_k_idx])
             rows.extend(np.arange(nitems)[top_k_idx])
             cols.extend(np.ones(self.k) * i)
@@ -382,7 +392,7 @@ class Cosine(ISimilarity):
         dist.data *= co_counts.data
         return dist
 
-rec = BasicItemKNNRecommender(URM=URM_train, shrinkage=0.0, k=50)
+rec = BasicItemKNNRecommender(URM=URM_train, shrinkage=0, k=50)
 rec.fit(ICM_all)
 #    playlist_id  track_id  artist_id  duration  playcount     album  \
 # 0      3271849   2801526     325531    157000   1086.000  [149604]   
