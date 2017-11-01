@@ -169,7 +169,7 @@ artist_le = preprocessing.LabelEncoder()
 artist_le.fit(list(tracks_artist['artist_id']))
 print('album_le classes: {}'.format(len(artist_le.classes_)))
 tracks_artist['transformed_track_id'] = track_id_le.transform(list(tracks_artist['track_id']))
-tracks_artist['transformed_artist_id'] = list(map(lambda x: x+31900+27604,                                                  artist_le.transform(list(tracks_artist['artist_id']))))
+tracks_artist['transformed_artist_id'] = list(map(lambda x: x+31900+27604, artist_le.transform(list(tracks_artist['artist_id']))))
 print(tracks_artist.head(6))
 
 
@@ -186,7 +186,7 @@ print(target_playlists_and_tracks.head(10))
 
 
 def split_training_data(train_final, target_playlists_and_tracks, random_state):
-    validation_set = target_playlists_and_tracks.groupby(['playlist_id'])                        .apply(lambda x: x.sample(n=3, random_state=random_state))                        .reset_index(drop=True)
+    validation_set = target_playlists_and_tracks.groupby(['playlist_id']).apply(lambda x: x.sample(n=3, random_state=random_state)).reset_index(drop=True)
     df_concat = pd.concat([train_final, validation_set])
     training_set = df_concat.drop_duplicates(keep=False)
     return training_set, validation_set
@@ -231,7 +231,7 @@ print('tracks_artist.shape {}'.format(tracks_artist.shape))
 ones = np.ones(tracks_tags.shape[0] + tracks_albums.shape[0] + tracks_artist.shape[0])
 print('ones shape: {}, vector: {}'.format(ones.shape, ones))
 
-ICM_tags = scipy.sparse.coo_matrix((ones, (list(tracks_tags['transformed_track_id']) + list(tracks_albums['transformed_track_id']) + list(tracks_artist['transformed_track_id'])                                          , list(tracks_tags['transformed_tag']) + list(tracks_albums['album']) + list(tracks_artist['transformed_artist_id']))))
+ICM_tags = scipy.sparse.coo_matrix((ones, (list(tracks_tags['transformed_track_id']) + list(tracks_albums['transformed_track_id']) + list(tracks_artist['transformed_track_id']), list(tracks_tags['transformed_tag']) + list(tracks_albums['album']) + list(tracks_artist['transformed_artist_id']))))
 ICM_tags = ICM_tags.tocsr()
 
 # Add tracks that do not have tags and its transformed id is bigger than the biggest that has a tag
